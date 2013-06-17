@@ -1,0 +1,59 @@
+grid.base.dir = @PROJECT_HOME@
+soaplab.dir   = @SOAPLAB_HOME@
+grid.ui.dir   = @GRID_UI_HOME@
+
+# replicate here some Soaplab properties in order to merge them
+# together with bioinfogrid properties...
+applist = ${soaplab.dir}/metadata/DefaultApplications.xml
+applist = ${soaplab.dir}/metadata/generated/OtherApplications.xml
+applist = ${grid.base.dir}/metadata/generated/GridApplications.xml
+
+metadata.dir = ${grid.base.dir}/metadata
+metadata.dir = ${soaplab.dir}/metadata/generated
+metadata.dir = ${soaplab.dir}/metadata
+
+# ...and here are bioinfogrid properties
+grid.jobs.dir = ${grid.base.dir}/JOBS
+
+grid.vo = biomed
+
+grid.proxy.dir = ${java.io.tmpdir}/proxies
+grid.proxy.file = x509${grid.vo}_${user.name}
+#grid.logger.level = 6;
+
+# --- these are cog.properties
+proxy = ${grid.proxy.dir}/${grid.proxy.file}
+cacert = ${grid.ui.dir}/grid-security/certificates
+
+#usercert=/home/globoid/.globus/usercert.pem
+#userkey=/home/globoid/.globus/userkey.pem
+###cacert=/etc/grid-security/certificates/42864e48.0, /etc/grid-security/certificates/5aba75cb.0
+
+#ignore.heartbeat.events
+#event.log.level = info
+#grid.job.timeout = ... (in seconds)
+
+# --- service-specific properties
+
+# JDL
+# ===
+
+#grid.helloworld.jdl.file = ${grid.base.dir}/data/helloworld.jdl
+
+# how to define an executable:
+# ----------------------------
+
+# --- option 1: directly
+#grid.helloworld.executable = ${grid.base.dir}/data/helloworld.sh
+
+# --- option 2: as located in a script directory
+grid.scripts.dir = ${grid.base.dir}/data/scripts
+grid.helloworld.executable = helloworld.sh
+
+# environment variables
+# ---------------------
+##grid.env.LFC_HOST = lfcserver.cnaf.infn.it
+
+# the rest
+# --------
+###grid.MyProxyServer = myproxy.cnaf.infn.it

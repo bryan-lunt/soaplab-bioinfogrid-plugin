@@ -1,0 +1,13 @@
+* how to configure edrlog.log?
+
+* where is error.txt from? stderr? :
+  [ org_glite_wmsui_apij_Api.cpp Warning: edg_wll_LogTransferSTART failed ]
+
+* proper destroying jobs
+
+* explore WMProxy client/library
+
+* not solved: 'executable' with its full path in the "Executable" JDL
+directive; do we need it?
+
+* cancelling a job from a different treminal... (must be solved in Soaplab2)

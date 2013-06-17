@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# This is a script for developers to update BioinfoGRID documentation on
+# SourceForge. Please make your own copy and change it to suit your
+# SourceForge name and the place of your local copy of Soaplab2.
+#
+# $Id: to_sf.sh.template,v 1.2 2006/12/03 16:01:13 marsenger Exp $
+# -------------------------------------------------------------------
+
+# --- EDIT THESE ---
+PLUGIN_HOME=/home/senger/bioinfogrid-plugin
+ANT=/usr/local/ant/bin/ant
+SOURCEFORGE_USER=marsenger
+# ------------------
+
+FILENAME=bioinfogrid-plugin-docs.tar.gz
+
+cd $PLUGIN_HOME
+$ANT docs
+
+cd docs
+/bin/rm -f $FILENAME
+tar czf $FILENAME *
+scp $FILENAME $SOURCEFORGE_USER@shell.sourceforge.net:/home/groups/s/so/soaplab/htdocs/bioinfogrid-plugin/
+
+echo ----- when logged at sourceforge: -----
+echo cd /home/groups/s/so/soaplab/htdocs/bioinfogrid-plugin
+echo tar xzf $FILENAME
+echo /bin/rm $FILENAME
+echo exit
+echo ---------------------------------------
+ssh -l $SOURCEFORGE_USER shell.sourceforge.net
+

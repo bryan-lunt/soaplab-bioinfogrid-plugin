@@ -1,0 +1,28 @@
+# This file is supposed to be 'sourced' from a Bash shell in order to
+# set LD_LIBRARY_PATH, before any Java program can access GRID native
+# libraries.
+#
+# $Id: library.path.template,v 1.1 2007/04/02 02:44:40 marsenger Exp $
+# -------------------------------------------------------------------
+
+GRID_LIBRARY_PATH=/usr/local/lib
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/globus/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/glite/externals/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/globus/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/glite/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lcg/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/edg/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/glite/externals/myproxy-1.14/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lib/python2.2:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lfc/include:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lfc/lib:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/lfc/include/Csec:${GRID_LIBRARY_PATH}
+GRID_LIBRARY_PATH=@GRID_UI_HOME@/globus/libexec:${GRID_LIBRARY_PATH}
+
+if [ -z "$LD_LIBRARY_PATH" ]; then
+    LD_LIBRARY_PATH=$GRID_LIBRARY_PATH
+else
+    LD_LIBRARY_PATH=$GRID_LIBRARY_PATH:${LD_LIBRARY_PATH}
+fi
+export LD_LIBRARY_PATH

@@ -1,0 +1,26 @@
+# create A1 or A2 logger and set its severity level:
+# --------------------------------------------------
+log4j.rootLogger=DEBUG, A1, A2
+###log4j.rootLogger=DEBUG, A2
+
+# set properties for A1 logger:
+# -----------------------------
+log4j.appender.A1=org.apache.log4j.ConsoleAppender
+log4j.appender.A1.layout=org.apache.log4j.PatternLayout
+log4j.appender.A1.layout.ConversionPattern=%-4r [%t] %-5p %c{1} %x- %m%n
+log4j.appender.A1.threshold=WARN
+
+log4j.appender.A2=org.apache.log4j.FileAppender
+log4j.appender.A2.file=bioinfogrid-plugin.log
+log4j.appender.A2=org.apache.log4j.RollingFileAppender
+log4j.appender.A2.MaxFileSize=500KB
+log4j.appender.A2.MaxBackupIndex=9
+log4j.appender.A2.layout=org.apache.log4j.PatternLayout
+log4j.appender.A2.layout.ConversionPattern=%d{ISO8601} %-4r [%t] %-5p %c{1} %x- %m%n
+
+# the rest:
+# ---------
+# Ignore less significant messages from the third-party packages
+log4j.logger.org.apache=WARN
+log4j.logger.org.globus=WARN
+log4j.logger.COM.claymoresystems=WARN

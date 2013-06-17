@@ -1,0 +1,13 @@
+This is a project allowing Soaplab2 to access GRID (using glite/globus
+infrastructure). The project was developed for BioinfoGRID European
+project (http://www.bioinfogrid.eu), but it is general. It allows all
+Soaplab2 clients (e.g. Taverna - http://taverna.sf.net) access GRID
+using the same Soaplab2 API.
+
+Adding new applications, running in GRID, requires, however, some
+scripting - which is not part of this plugin, but it is, hopefully,
+documented in the 'docs' directory.
+
+-------------------------------------------------------------------
+$Id: README,v 1.2 2007/04/08 19:05:45 marsenger Exp $
+-------------------------------------------------------------------

@@ -1,0 +1,7 @@
+.cvsignore
+log4j.properties
+build.properties
+build
+*.log*
+JOBS
+RESULTS

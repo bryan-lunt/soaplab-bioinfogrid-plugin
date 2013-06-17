@@ -1,0 +1,10 @@
+.cvsignore
+*.html
+*.css
+*-list
+class-use
+org
+resources
+examples
+bioinfogrid-plugin-docs.tar.gz
+

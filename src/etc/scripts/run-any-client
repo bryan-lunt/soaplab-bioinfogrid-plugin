@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+#  Sets CLASSPATH and runs whatever class - put it
+#  as the first argument. Use this script until you create
+#  a specialized script for your application.
+#
+#  $Id: run-any-client,v 1.6 2007/10/31 15:12:15 marsenger Exp $
+# ----------------------------------------------------
+
+PROJECT_HOME=@PROJECT_HOME@
+LIBS_PATH=@PROJECT_DEPS@
+SOAPLAB_HOME=@SOAPLAB_HOME@
+GRID_UI_HOME=@GRID_UI_HOME@
+
+CLASSPATH=${PROJECT_HOME}/build/classes
+CLASSPATH=${SOAPLAB_HOME}/build/classes:$CLASSPATH
+CLASSPATH=`echo ${PROJECT_HOME}/lib/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=`echo ${SOAPLAB_HOME}/build/lib/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=`echo ${SOAPLAB_HOME}/lib/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=`echo ${GRID_UI_HOME}/glite/share/java/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=`echo ${GRID_UI_HOME}/d-cache/srm/lib/globus/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=`echo ${GRID_UI_HOME}/glite/externals/jclassads-2.2/*.jar | tr ' ' ':'`:$CLASSPATH
+CLASSPATH=$LIBS_PATH:$CLASSPATH
+
+. ${PROJECT_HOME}/build/run/library.path
+
+exec java -cp $CLASSPATH -Dsoaplab.configuration=bioinfogrid.properties,soaplab.properties @LOG4J@ "$@"

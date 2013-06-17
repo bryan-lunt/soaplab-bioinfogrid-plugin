@@ -1,0 +1,56 @@
+ExploreGrid
+===========
+   build/run/run-any-client org.soaplab.admin.ExploreGrid [options]
+
+where <options> are:
+
+  -h[elp]  ... print this help
+  -q       ... "quiet" (less verbose mode)
+
+For exploring GRID:
+-------------------
+  -job <grid-job-id>  [-vv]
+           ... print status of the given job
+               (vv ... very verbose)
+
+For exploring a service (without going to any GRID):
+----------------------------------------------------
+  -name <service-name>
+
+     This is a mandatory option: a service name whose features are
+     going to be explored. For example: -name grid.gtesting1
+
+  Exploring metadata is the same as in CmdLineClient. It is included
+  here for convenience because to know names of input/output data may
+  be handy:
+
+  -i  ... show names of service inputs
+  -ii ... show names and attributes of service inputs
+
+  The remaining options are input data (values for parameters that
+  will constitued the analysis command-line). The names can be found
+  using option -i. The recognized formats are:
+
+  <input-name> <input-value>
+  <input-name> :<input-value>
+     a value starting with ':' is treated as a file name
+     and the contents of this file is used as an input
+  -<input-name>
+     can be used for boolean parameters and it means
+     the same as:
+       <input-name> true
+
+  Show JDL that would be cretated and sent to the GRID (it
+  incorporates the input data given as described above):
+
+  [-jdl] [-tjdl <file-name>] [-ojdl <file-name>]
+
+  -jdl
+        ... create JDL for the given service and show it on the screen
+  -tjdl <template-file-name>
+        ... create JDL from the given JDL template
+            (default is taken either from configuration, selected by
+             the service name, or a 'universal.jdl' template is used)
+  -ojdl <file-name>
+        ... where to write created JDL file
+            (default is standard output)

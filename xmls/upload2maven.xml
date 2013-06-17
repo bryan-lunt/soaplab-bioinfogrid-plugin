@@ -1,0 +1,47 @@
+<!-- ================================================================== -->
+<!--                  Uploading to Maven repository                     -->
+<!-- ================================================================== -->
+
+<!-- This is an XML entity included in ../build.xml file -->
+<!-- $Id -->
+
+<!-- 
+
+It contains tasks that deploy (upload) project specific jar files to a
+Maven repository. It uses files project[-*].pom where are details what
+to upload and what are project dependencies.
+
+The tasks here usually depends on task from the main ../build.xml that
+creates project jar files.
+
+-->
+
+<!-- ================================================================== -->
+<!--                      Remote Maven repository                       -->
+<!-- ================================================================== -->
+<target name="mdeploy" depends="mdeploy-core"
+  description="Deploy all parts of this project to a remote Maven repository"/>
+
+<!-- deploying bioinfogrid-plugin.jar -->
+<target name="mdeploy-core" depends="initmaven,jars">
+  <artifact:install-provider artifactId="${bio.maven.install.provider}" version="1.0-alpha-5"/>
+
+  <artifact:deploy file="${build.lib}/${maven.project.artifactId}.jar">
+    <remoteRepository url="${bio.maven.repository.scp}">
+      <authentication username="${bio.maven.auth.username}" privateKey="${bio.maven.auth.privkey}"/>
+    </remoteRepository>
+    <pom refid="maven.project"/>
+  </artifact:deploy>
+</target>
+
+<!-- ================================================================== -->
+<!--                      Local Maven repository                        -->
+<!-- ================================================================== -->
+<target name="minstall" depends="minstall-core"
+  description="Install all parts of this project in a local Maven repository"/>
+
+<target name="minstall-core" depends="initmaven,jars">
+  <artifact:install file="${build.lib}/${maven.project.artifactId}.jar">
+    <pom refid="maven.project"/>
+  </artifact:install>
+</target>

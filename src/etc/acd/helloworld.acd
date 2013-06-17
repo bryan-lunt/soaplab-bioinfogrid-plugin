@@ -1,0 +1,18 @@
+appl: HelloWorld [
+  documentation: "Classic greeting coming from the GRID"
+  groups: "grid"
+  nonemboss: "Y"
+  executable: "helloworld.sh"
+]
+
+string: greeting  [
+  additional: "Y"
+  parameter: "Y"
+  default: "Hello World"
+  comment: "defaults"
+]
+
+outfile: output  [
+  additional: "Y"
+  default: "stdout"
+]

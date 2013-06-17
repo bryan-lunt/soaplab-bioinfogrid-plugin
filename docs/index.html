@@ -1,0 +1,782 @@
+<html> <head>
+<title>BioinfoGRID Plug-In to Soaplab2</title>
+<!--
+<link rel="shortcut icon" href="images/soaplab-favicon.ico" >
+<link rel="icon" href="images/gcp-animated_favicon.gif" type="image/gif" >
+-->
+
+<link rel="stylesheet" href="images/stylesheet.css" type="text/css">
+
+</head>
+
+<body>
+
+<div id="portal-logo"
+style="border-style:solid;background-color:#003399;width:100%;height:85;border:0;">
+<img src="images/logo_background.gif" style="height:85px" alt="logo" />
+<img style="position:absolute;right:1em;top:0px" src="images/logo_right.gif" alt="logo" />
+<img style="position:absolute;left:0px;top:0px" src="images/logo_left.gif" alt="logo" />  
+</div>
+
+<h1>BioinfoGRID Plug-In to Soaplab2</h1>
+
+<a href="http://www.bioinfogrid.eu/">BioinfoGRID project</a> aims
+<quote>"to connect many European computer centres in order to carry out
+Bioinformatics research and to develop new applications in the sector
+using a network of services based on futuristic Grid networking
+technology that represents the natural evolution of the Web"</quote>. <p>
+
+This document describes how it can be achieved by using a
+BioinfoGRID-specific plug-in to a more general software infrastructure
+called <a href="http://soaplab.sourceforge.net/soaplab2/">Soaplab2</a>. <p>
+
+Because this is a plug-in (a sub-part) of Soaplab2, the documentation
+only includes the plug-in specific features and requirements, for the
+rest it refers to the Soaplab2 documentation. <p>
+
+<h3>Table of Contents</h3>
+
+<div class="indent">
+<dl>
+  <dt><a href="#summary">Summary</a>
+  <dt><a href="#reqs">Requirements</a>
+  <dt><a href="#config">Configuration</a>
+       <dl>
+	 <dt><a href="#config_props">Configuration properties</a>
+       </dl>
+       <p>
+  <dt><a href="#use">How to use BioinfoGRID plug-in</a>
+       <dl>
+	 <dt><a href="#use_cert">Using certificate</a>
+	 <dt><a href="#use_native">Using native methods from Java</a>
+	 <dt><a href="#use_cmdline">Starting a grid task from a command-line</a>
+	 <dt><a href="#use_admin">Admin tool <em>ExploreGrid</em></a>
+	 <dt><a href="#use_api">BioinfoGRID Plug-In API</a>
+       </dl>
+       <p>
+  <dt><a href="#ack">Acknowledgment</a>
+</dl>
+</div>
+
+<a name="summary"></a>
+<h2>Summary</h2>
+
+The main goal is to have a tool that submits jobs to a computational
+grid, controls their execution and retrieves their results, making
+necessary steps hidden behind a Web service facade. <p>
+
+This will allow to access the richness of the grid by using existing
+and well-developed end-users tools (such as <a
+href="http://taverna.sf.net">Taverna workflow manager</a>). <p>
+
+<a name="reqs"></a>
+<h2>Requirements</h2>
+
+<ul>
+  <li> Install Java 1.5 (or later).
+  <li> Install <a href="http://ant.apache.org/">Apache Ant</a>.
+  <li> Download and unpack <a
+href="https://gilda.ct.infn.it/UIPnP/gilda-UIPnP30.tar.gz">Gilda UI
+PlugAndPlay</a>. This is a toolkit for accessing the grid itself. You
+do not need to install it. Just unpack it and remember its directory -
+it will be used later in the configuration section. <p>
+
+       The usage of this toolkit makes the whole BioinfoGRID plug-in
+runnable only on Linux platform (of course, the end-users - the
+Soaplab2 Web services clients - can use any operating system or
+platform).
+
+  <li> Make sure that you have a valid GRID certificate. <p>
+
+       Having a certificate means that you have two files: one is
+called <em>certificate</em>, the second is your <em>private
+key</em>. Below is shown how and where to use these two files. <p>
+
+       The current setup uses one certificate on the Soaplab2 site
+(the site where the Soaplab2 Web services are deployed and running,
+and from were the grid requests are made), shared by all Soaplab2
+clients. This arrangement may changed later. <p>
+
+  <li> Finally, or in the first place, download and build BioinfoGRID
+plug-in itself:
+       <pre class="script">
+cvs -d :pserver:anonymous@soaplab.cvs.sourceforge.net:/cvsroot/soaplab login
+Password: none
+cvs -z3 -d :pserver:anonymous@soaplab.cvs.sourceforge.net:/cvsroot/soaplab co -P bioinfogrid-plugin
+cvs -d :pserver:anonymous@soaplab.cvs.sourceforge.net:/cvsroot/soaplab logout
+
+cd bioinfogrid-plugin
+ant bootstrap
+ant       
+       </pre>
+
+       Anytime later, you can re-build BioinfoGRID plug-in by calling
+simply <tt>ant</tt>. The "bootstrap" needs to be done only once. <p>
+       
+</ul> <p>
+
+<a name="config"></a>
+<h2>Configuration</h2>
+
+The BioinfoGRID plug-in, as well as the whole Soaplab2, is driven by
+properties-based configuration. The details about properties file
+format and how to use it are explained in the <a
+href="http://soaplab.sourceforge.net/soaplab2/ConfigurationGuide.html">Soaplab2's
+Configuration Guide</a>. Here are the BioinfoGRID specifics. <p>
+
+A template for your own property file is in
+<tt>src/etc/config/bioinfogrid.properties.template</tt>. This file is
+copied by Ant to <tt>build/classes/bioinfogrid.properties</tt> file,
+after making there some locations-specific substitutions. In order to
+do it, Ant needs to know where you downloaded Soaplab2 and Gilda
+UI PlugAndPlay to. Therefore, Ant looks for <em>its own</em>
+properties <pn>soaplab.dir</pn> and <pn>grid.ui.dir</pn> in file
+<tt>build.properties</tt>. For example, this is my
+<tt>build.properties</tt> file:
+
+<pre class="code">
+soaplab.dir = /home/senger/soaplab2
+grid.ui.dir = /home/senger/grid/UIPnPcomb
+</pre>
+
+Using these properties, the Ant creates the <tt>bioinfogrid.properties</tt>
+file starting like this:
+
+<pre class="code">
+grid.base.dir = /home/senger/bioinfogrid-plugin
+soaplab.dir   = /home/senger/soaplab2
+grid.ui.dir   = /home/senger/grid/UIPnPcomb
+...
+</pre>
+
+The property names are the same as the properties put into
+<tt>build.properties</tt> - so why not to use them directly? Well, Ant
+uses them not only to create the <tt>bioinfogrid.properties</tt> file
+but also to create other files, such as
+<tt>build/run/run-any-client</tt> script. That is why. <p>
+
+Any program that uses BioinfoGRID plug-in must find this configuration
+file (and also the logging configuration file - as explained in the
+Configuration Guide). One way how to achieve it is to use the
+<pn>soaplab.configuration</pn> property directly on the
+command-line. For example, here is the end of the
+<tt>build/run/run-any-client</tt> script that uses it:
+
+<pre class="sscript">
+exec java -cp $CLASSPATH -Dsoaplab.configuration=bioinfogrid.properties,soaplab.properties "-Dlog4j.configuration=file:/home/senger/bioinfogrid-plugin/log4j.properties" "$@"
+</pre>
+
+It shows that the value of the <pn>soaplab.configuration</pn> property
+can contain multiple configuration files, separated by commas. In the
+example above, it has here discussed <tt>bioinfogrid.properties</tt>
+with BioinfoGRID plug-in specifics, and the more general Soaplab2
+properties in <tt>soaplab.properties</tt>. <p>
+
+Another way (the same way as Soaplab2 does it) is to use property
+<pn>bioinfogrid.configuration</pn> whose value is a file name with the
+BioinfoGRID specific properties. <p>
+
+If you want to define your own properties without changing the
+property template (the file
+<tt>src/etc/config/bioinfogrid.properties.template</tt>) or the
+starting script (e.g. <tt>build/run/run-any-client</tt>), probably the
+best way is to create your own property file and give its name to Ant
+using a property <pn>my.bioinfogrid.properties</pn>. Ant uses this
+file instead of the template file to create
+<tt>build/classes/bioinfogrid.properties</tt>. For example:
+
+<ul>
+  <li> Create file <tt>/home/senger/my.bioinfogrid.cfg</tt>
+  <li> Add this line into your <tt>build.properties</tt> - a place
+where Ant looks for its properties when doing its tasks (if such file
+does not exist, create a new one in your <tt>bioinfogrid-plugin</tt>
+root directory):
+
+<pre class="code">
+my.bioinfogrid.properties = /home/senger/my.bioinfogrid.cfg
+</pre>
+  <li> Call Ant's task <em>config</em>:
+       <pre class="script">
+       ant config
+       </pre>
+</ul>
+<p>
+
+<a name="config_props"></a>
+<h3>Configuration properties</h3>
+
+All properties used by BioinfoGRID plug-in, together with short
+descriptions, are listed in the class <a
+href="API/org/bioinfogrid/services/BioinfogridConstants.html">BioinfogridConstants</a>
+- looked there for fields started with <tt>PROP_</tt>. <p>
+
+<div class="note">
+
+Here, and on few other places, this document refers to the BioinfoGRID
+API. If you are browsing your local copy of the BioinfoGRID Plug-In
+documentation, and the API links are broken, you need to generate the
+API documentation first by calling an Ant task <tt>docs</tt>:
+
+<pre class="script">
+cd &lt;bioinfogrid-plugin&gt;
+ant docs
+</pre>
+
+</div>
+
+<h4>Basic properties</h4>
+
+<dl>
+  <dt class="pnhi">grid.base.dir</dt>
+  <dd>A directory where the BioinfoGRID plug-in is installed. Created
+       automatically by Ant.</dd> <p>
+
+  <dt class="pnhi">soaplab.dir</dt>
+  <dd>A directory where Soaplab2 itself is installed. Created
+       automatically by Ant. </dd> <p>
+
+  <dt class="pnhi">grid.ui.dir</dt>
+  <dd>A directory where the Gilda PlugAndPlay is installed. Created
+       automatically by Ant.</dd> <p>
+
+  <dt class="pnhi">grid.jobs.dir</dt>
+  <dd>A directory name where the BioinfoGRID jobs create their files
+(such as a JDL file and files with input data), before they are
+submitted to the GRID. Default value is <tt>JOBS</tt>.</dd> <p>
+
+</dl>
+
+<h4>Soaplab2 replicated properties</h4>
+
+As explained in the <a
+href="http://soaplab.sourceforge.net/soaplab2/ConfigurationGuide.html">Soaplab2's
+Configuration Guide</a>, some (if not most) properties may have
+multiple values (either using a comma-separated list, or using the
+same property name more than once). This feature, however, does not
+work, if the properties with the same name are spread across more
+configuration files. Therefore, if you wish to <em>add</em> a
+BioinfoGRID specific value to the same property already used by
+Soaplab2, you have to replicate it here. <p>
+
+A typical example are service metadata: if you wish to add BioinfoGRID
+services to the existing set of other Soaplab2 services, you have to
+put <em>in the BioinfoGRID property file</em> something like this:
+
+<pre class="code">
+applist = ${soaplab.dir}/metadata/DefaultApplications.xml
+applist = ${soaplab.dir}/metadata/generated/OtherApplications.xml
+applist = ${grid.base.dir}/metadata/generated/GridApplications.xml
+
+metadata.dir = ${grid.base.dir}/metadata
+metadata.dir = ${soaplab.dir}/metadata/generated
+metadata.dir = ${soaplab.dir}/metadata
+</pre>
+
+<h4>Properties handling timeouts and events</h4>
+
+<dl>
+  <dt class="pnhi">grid.polling.interval</dt>
+  <dd>An integer value, in seconds, specifying how often to ask for a
+GRID job status, once a job is submitted. This interval is dynamically
+increased after some time, but it never extends the value given by
+property <pn>grid.max.polling.interval</pn>. Therefore, if you wish to
+keep a fixed polling interval, set both properties to the same
+value. Default starting value is 10. </dd> <p>
+
+  <dt class="pnhi">grid.max.polling.interval</dt>
+  <dd>An integer value, in seconds, specifying the maximum delay
+between two pollings for a GRID job status. Default value is 300
+(i.e. 5 minutes). </dd> <p>
+
+  <dt class="pnhi">grid.job.timeout</dt>
+  <dd>An integer value, in seconds, specifying the maximum time to
+wait for a GRID job to complete. Default value is 10 * 60 * 10 (which
+is 10 hours). Note that you can change the property even when a job
+has been already submitted - and influence dynamically when the
+timeout occurs. Typically, change the timeout to 0, and, in a
+reasonably short time, the job will be cancelled. </dd> <p>
+
+  <dt class="pnhi">event.log.level</dt>
+  <dd>(A general Soaplab2 property.) A value indicating a level under
+which the default event listener records (logs) Soaplab's events. The
+accepted values are (in case-insensitive way): trace, debug, info,
+warn, error, fatal, and off ('off' means no logging at all). Default
+value is debug. </dd> <p>
+
+  <dt class="pnhi">ignore.heartbeat.events</dt>
+  <dd>(A general Soaplab2 property.) A boolean property. When set to
+true it indicates that event listeners should ignore Heartbeat
+Progress events (because there may be too many of them). Default value
+is false. </dd> <p>
+
+</dl>
+
+<h4>GRID specific properties</h4>
+
+<dl>
+
+  <dt class="pnhi">grid.vo</dt>
+  <dd>A name of a GRID virtual organization. DEfault value is
+      <tt>biomed</tt>. </dd> <p>
+
+  <dt class="pnhi">grid.nsaddress</dt>
+  <dd>A Network Server address (NSAddress), a hostname with a port
+number. It is an address of a GRID broker that will be used to submit
+and monitor GRID jobs. Default value is
+<tt>glite-rb-00.cnaf.infn.it:7772</tt>. </dd> <p>
+
+  <dt class="pnhi">grid.lbaddress</dt>
+  <dd>A Logging and Bookkeeping address (LBAddress), a hostname with a
+port number. It can be also a list of such addresses
+(comma-separated). Default value is
+<tt>glite-rb-00.cnaf.infn.it:9000</tt>. </dd> <p>
+
+  <dt class="pnhi">grid.ce</dt>
+  <dd>A URL (without the protocol part) of a Computing Element
+assigned to perform GRID jobs. There is no default value - because it
+should be up to the GRID itself to find a suitable (matching)
+computing element. </dd> <p>
+
+  <dt class="pnhi">grid.proxy.dir</dt>
+  <dd>A directory name where the user-certificate proxy can be
+found. Note that the proxy must be created there manually, it is not
+(at least not for now) a task of the BioinfoGRID plug-in. Default value
+is created by concatenating Java System properties
+<tt>java.io.tmpdir</tt>, <tt>file.separator</tt>, and the name
+<tt>proxies</tt>. </dd> <p>
+
+  <dt class="pnhi">grid.proxy.file</dt>
+  <dd>A base file name (without any path) with a user-certificate
+proxy. This file will be looked for in directory given by
+<pn>grid.proxy.dir</pn>. Default value is created by concatenating
+string <tt>x509</tt>, value of the property <pn>grid.vo</pn>, followed
+by an underscore and the value of the Java System property
+<tt>user.name</tt>. </dd> <p>
+
+  <dt class="pnhi">grid.logger.level</dt>
+  <dd>An integer value specifying a logger level for the low-level
+GRID commands. It is used for submitting jobs. A value between 1 and 6
+is accepted. Default is 3. </dd> <p>
+
+</dl>
+
+<h4>COG - Even more GRID specific properties</h4>
+
+Within Gilda UI PlugAndPlay module, there is another layer, called
+COG. This module has its own properties. For convenience, BioinfoGRID
+plug-in allows to define them together with other BioinfoGRID
+properties in the same file. Typically, a BioinfoGRID configuration
+file contains:
+
+<pre class="code">
+# --- these are cog.properties
+proxy = ${grid.proxy.dir}/${grid.proxy.file}
+cacert = ${grid.ui.dir}/grid-security/certificates
+</pre>
+
+If you wish, from various reasons, to keep them separated, point the
+System property <pn>org.globus.config.file</pn> to their own property
+file. Note, however, that in such file, you cannot use anymore
+variable substitutions and other advantages of the
+Soaplab2/BioinfoGRID configuration files. <p>
+
+<dl>
+  <dt class="pnhi">proxy</dt>
+  <dd>A full file name of a user-proxy certificate. Because this is a
+property used by CoG Java Kit (and not by BioinfoGRID itself) it does
+not make sense to prefix it with a service or class name (as it is
+possible with other BioinfoGRID properties). <p>
+     
+       There is no default value. Recommended value is a concatenation
+of <pn>grid.proxy.dir</pn> and <pn>grid.proxy.file</pn> (as shown
+above). </dd> <p>
+
+  <dt class="pnhi">cacert</dt>
+  <dd>A name of a directory with CA cert files. There is no default
+value. These CA certificate files are usually located in the Gilda
+UI PlugAndPlay package in <tt>grid-security/certificates</tt>
+directory. </dd> <p>
+
+</dl>
+
+<h4>Properties for creating JDL</h4>
+
+These properties (except perhaps <pn>grid.scripts.dir</pn>) usually
+make sense only when their names are prefixed with a service name
+whose JDL file is being created. For example:
+
+<pre class="code">
+grid.helloworld.jdl.file = ${grid.base.dir}/data/helloworld.jdl
+</pre>
+
+But before going to individual properties let us look in details in
+the process how BioinfoGRID creates JDL files: <p>
+
+Each JDL file is created from a template file (property
+<pn>jdl.file</pn>). BioinfoGRID plug-in reads the template looking
+there for <em>tokens</em>. Tokens are keywords tightly surrounded by
+the <tt>@</tt> characters (token separators). Then:
+
+<ul>
+
+  <li>If there are no tokens, the template is used without any changes
+as a JDL file. <p>
+
+  <li>The known tokens are replaced by values defined in various
+properties (see below) and, the most importantly, by the user input
+data. <p>
+
+  <li>If there are still some remaining, not-yet-substituted tokens,
+their names (the keywords between token separators) are tried as
+property names (in case-insensitive way), and replaced by such
+property values. <p>
+
+  <li>Finally, the remaining tokens are kept there as they are,
+unchanged, including token separators.
+
+</ul><p>
+
+So far, the recognized token names are:
+
+<dl>
+  <dd><pn>GRID_VO</pn><dd>
+  <dd><pn>EXECUTABLE</pn><dd>
+  <dd><pn>INPUT_SANDBOX</pn><dd>
+  <dd><pn>OUTPUT_SANDBOX</pn><dd>
+  <dd><pn>CMD_ARGS</pn><dd>
+  <dd><pn>ENVS</pn><dd>
+</dl><p>
+
+Look into <tt>src/etc/config/universal.jdl.template</tt> how and where
+they are used. If in doubts what will be replaced by what, use the
+BioinfoGRID admin tool <em>ExploreGrid</em>. <p>
+
+<dl>
+
+  <dt class="pnhi">grid.scripts.dir</dt>
+  <dd>A directory name where the executables (scripts) - if they do
+not have an absolute path - are looked for. There is no default
+value. </dd> <p>
+
+  <dt class="pnhi">jdl.file</dt>
+  <dd>A name of a JDL file. Default value (which is good for most
+jobs) is <tt>universal.jdl</tt>. The file with this name is created by
+Ant automatically in the <tt>build/classes</tt> from the template
+<tt>src/etc/config/universal.jdl.template</tt>. <p>
+
+  <dt class="pnhi">executable</dt>
+  <dd>A name of an executable (usually a script) that is going to be
+executed on the GRID. There is no default value. If it does not
+contain an absolute path, it will be looked for in the directory given
+by property <pn>grid.scripts.dir</pn>. <p>
+
+       This property value is used in substituting tokens
+<pn>EXECUTABLE</pn> and <pn>INPUT_SANDBOX</pn>. <p>
+
+       This property is usually define either directly, for example:
+       
+<pre class="code">
+# --- option 1: directly
+grid.helloworld.executable = ${grid.base.dir}/data/helloworld.sh
+</pre>
+
+       or indirectly, for example:
+       
+<pre class="code">
+# --- option 2: as located in a script directory
+grid.scripts.dir = ${grid.base.dir}/data/scripts
+grid.helloworld.executable = helloworld.sh
+</pre>
+       </dd> <p>
+
+  <dt class="pnhi">grid.env</dt>
+  <dd>A prefix used in names of those properties who will become
+environment variables, replacing token <pn>ENVS</pn>. For example:
+
+<pre class="code">
+grid.env.LFC_HOST = lfcserver.cnaf.infn.it
+</pre>
+
+       will become an environment variable <tt>LFC_HOST</tt> on the
+GRID computing element </dd> <p>
+
+</dl>
+<p>
+
+
+<a name="use"></a>
+<h2>How to use BioinfoGRID plug-in</h2>
+
+Well, BioinfoGRID is a Soaplab2 plug-in - so at the end it will be used
+in the same way as the whole Soaplab2. Before the Soaplab2 is
+finalized, however, the only way is to use some command-line clients
+(they are actually part of the Soaplab2 itself). With some
+additions. <p>
+
+<a name="use_cert"></a>
+<h3>Using certificate</h3>
+
+Without going to details about this "Grid God", this is what you need
+to do before starting any program that uses BioinfoGRID plug-in:
+
+<ul>
+  <li> Create a user-certificate proxy (for that, actually, you need
+to <em>install</em> the frightening package Gilda UI PlugAndPlay;
+sorry, I lied) :
+
+       <pre class="script">
+cd &lt;Gilda UI PlugAndPlay directory&gt;
+. glite-setup.sh
+voms-proxy-init -cert &lt;your-certificate-file&gt; -key &lt;your-private-key-file&gt;
+       </pre>
+
+       Where the proxy file is created and how it is called, it
+depends what you put into your <tt>glite-setup.sh</tt>. But you need
+to know - because the same facts are going to be put in the
+<tt>bioinfogrid.properties</tt>. This is an example of a part of my
+<tt>glite-setup.sh</tt> that corresponds with the
+<tt>bioinfogrid.properties</tt> (the <tt>thevo</tt> is a name of a
+virtual organization which your certificate is valid for):
+
+<pre class="code">
+...
+thevo=bio
+export PROXY_DIR=/tmp/proxies
+mkdir $PROXY_DIR 2>1 > /dev/null
+export X509_USER_PROXY=$PROXY_DIR/x509${thevo}_$USER
+export GRID_PROXY_FILE=$PROXY_DIR/x509${thevo}_$USER
+...
+</pre>
+
+       <div class="note">
+       I believe that the shell variable <tt>thevo</tt> is not in the
+original <tt>glite-setup.sh</tt>. You have to look there and make sure
+that you are setting a correct virtual organization for your needs.
+       </div>
+       
+       The created user-certificate proxy is valid only for 12
+hours. If you do not repeat this step before it expires you will get
+an error message:
+
+<pre class="sscript">
+2006-11-17 03:12:47,302 1601 [main] ERROR AbstractJob - [Internal error] badProxy Certificate time left not enough to perform any operation
+</pre>       
+
+
+  <li> Create the following properties in your
+<tt>bioinfogrid.properties</tt> file (as explained in details in the
+<a href="#config">configuration section</a> of this document):
+
+<pre class="code">
+grid.vo = biomed
+grid.proxy.dir = ${java.io.tmpdir}/proxies
+grid.proxy.file = x509${grid.vo}_${user.name}
+
+# --- these are cog.properties
+proxy = ${grid.proxy.dir}/${grid.proxy.file}
+cacert = ${grid.ui.dir}/grid-security/certificates
+</pre>
+
+</ul> <p>
+
+<a name="use_native"></a>
+<h3>Using native methods from Java</h3>
+
+BioinfoGRID plug-in uses third-party Java API to get access to the
+grid. This API uses native methods which means it requires the
+<tt>LD_LIBRARY_PATH</tt> environment variable to be set in advance. By
+the way, this also means that the BioinfoGRID plug-in services (not
+clients) are ready to be run on Linux machines only. <p>
+
+This is achieved by the Ant task <tt>config</tt> (which is called when
+you build BioinfoGRID plug-in, but can be called anytime). The task
+uses a template <tt>src/etc/config/library.path.template</tt> to
+create a run-time script <tt>build/run/library.path</tt> (where all
+local paths are resolved). This script is then used by the (also)
+generated run-time scripts in the same directory <tt>build/run</tt>,
+and can be used also when you start a Tomcat server to provide
+Soaplab2 services. <p>
+
+All other environment variables are set by BioinfoGRID plug-in
+itself. Their names are logged (in the debug level). At the time of
+writing this document, the BioinfoGRID plug-in sets these environment
+variables (their values are just examples):
+
+<pre class="code">
+2007-04-03 00:47:29,365 512  [main] DEBUG GridJobUtils - Set environment variables:
+X509_USER_PROXY=/tmp/proxies/x509biomed_senger
+X509_CERT_DIR=/home/senger/grid/UIPnPcomb/grid-security/certificates
+GRID_PROXY_FILE=/tmp/proxies/x509biomed_senger
+</pre>
+
+
+<a name="use_cmdline"></a>
+<h3>Starting a grid task from a command-line</h3>
+
+The command-line script provided by Soaplab2 is only a debugging
+tool. For the real end-users, there will be a Tomcat server running
+and accepting requests from the network. However, regardless of the
+analysis request form, there are several steps any service provider
+has to do:
+
+<h4>Create analysis metadata</h4>
+
+Each analysis is described by its metadata. They are in XML
+format. Until new metadata tools are created, the previous Soaplab way
+is used: create an ACD file (a human-readable format, inherited from
+the EMBOSS suite) and run the Ant task <tt>gen</tt> that converts ACD
+to XML format. The best way to do it is to put new ACD files in the
+<tt>src/etc/acd</tt> directory (where are already ACD files for
+several testing services). <p>
+
+The Ant's <tt>gen</tt> task can be configured by several properties
+but usually all their default values are sufficient (check the
+<tt>build.xml</tt> for details). By default, all ACD files from the
+<tt>src/etc/acd</tt> directory are converted to XML files that are
+stored in the <tt>metadata/generated</tt> directory, and a summary
+file <tt>metadata/generated/GridApplications.xml</tt> is created. The
+summary file should be mentioned in the BioinfoGRID configuration
+(details <a href="#config">elsewhere</a> in this document). For
+example:
+
+<pre class="code">
+applist = ${grid.base.dir}/metadata/generated/GridApplications.xml
+</pre>
+
+<h4>Decide about analysis executable</h4>
+
+The grid concept requires (well, not always but often) to send your
+<em>executable</em> together with your input data. Which usually means
+to create a shell script. The <a href="#config">configuration
+section</a> explains how to specify what is your executable and where
+it can be found. <p>
+
+<div class="note">
+
+At the moment, the BioinfoGRID plug-in has no support (except editing
+an JDL template or file manually) for executables defined with the
+full path as it exists on the GRID Computing Element. In other words,
+the <tt>Executable</tt> directive in the JDL file is always created
+with the path removed.
+
+</div>
+
+<h4>Add analysis-specific properties</h4>
+
+Again, the known properties are described in the <a
+href="#config">configuration section</a>. This part may also include
+tweaking the GRID by adding either properties or changing JDL template
+(e.g. JDL directive <tt>Requirements</tt>). <p>
+
+Remember that there are no properties containing the user input
+data. They will be added by BioinfoGRID plug-in to the JDL file when
+you run the service (next section). <p>
+
+<h4>Start analysis</h4>
+
+Now, it is time to start a job. In Soaplab2, there is a command-line
+client that can be used to test BioinfoGRID plug-in. Start it with the
+<tt>-help</tt> argument to see all options:
+
+<pre class="script">
+build/run/run-any-client org.soaplab.clients.CmdLineClient -help
+</pre>
+
+To run a job, start it with the <tt>-w</tt> option (it means "create,
+run and wait"), with the name of a service, and usually with the
+<tt>-r</tt> option (meaning "show me results when you have them"):
+
+<pre class="script">
+build/run/run-any-client org.soaplab.clients.CmdLineClient -name grid.gtesting1 -w -r
+</pre>
+
+You can see the progress in the log file (by default
+<tt>bioinfogrid-plugin.log</tt>). As most of the Soaplab2 properties,
+also properties defining what to be logged can be changed dynamically,
+during the execution of a grid job. For example, change
+<pn>ignore.heartbeat.events</pn> to <tt>true</tt> and log stays more
+silent. Or, if you wish to terminate still running job, set
+<pn>grid.job.timeout</pn> to few seconds, and BioinfoGRID plug-in spots
+it and sends a request to cancel the running job. <p>
+
+Sometimes you wish to explore manually what is going on the GRID. In
+order to do so, you need the <em>GRID Job Id</em> - which is different
+from the one <em>Soaplab2 Job Id</em>, displayed by the command-line
+client. You can find it either in the log file:
+
+<pre class="script">
+2007-04-03 00:22:14,410 48223 [main] INFO  GridJob - GRID job submitted: https://glite-rb-00.cnaf.infn.it:9000/pIYXuOIRZ82H1WeVm-wivQ
+</pre>
+
+or in the directory where all data for submitting GRID jobs were
+stored. By default, it is a directory <tt>JOBS</tt> (or whatever the
+property <pn>grid.jobs.dir</pn> says).
+
+Having the GRID Job Id, you may use the <em>ExploreGrid</em> admin
+tool (see below). <p>
+
+<a name="use_admin"></a>
+<h3>Admin tool <em>ExploreGrid</em></h3>
+
+This tool is a simple command-line program (which may later be
+extended to a kind of GUI) that allows:
+
+<ul>
+
+  <li> to check the status of the submitted jobs, and <p>
+       
+  <li> to explore the creation of the JDL files.
+
+</ul><p>
+
+The <tt>-help</tt> argument shows all options:
+
+<pre class="script">
+build/run/run-any-client org.bioinfogrid.admin.ExploreGrid -h
+</pre>
+
+
+<a name="use_api"></a>
+<h3> BioinfoGRID Plug-In API</h3>
+
+The main class doing all the grid talking is
+<tt>org.bioinfogrid.services.GridJob</tt>.  <a
+href="API/index.html">Here</a> is the BioinfoGRID Plug-In API. <p>
+
+<a name="ack"></a>
+<h2>Acknowledgment</h2>
+
+The work on Soaplab2 is driven by Martin Senger - please see <a
+href="http://soaplab.sourceforge.net/soaplab2/">there</a> other
+acknowledgment. <p>
+
+The main driving force behind the BioinfoGRID plug-in is Peter Ernst
+from the Sandor Suhai's group at <a
+href="http://genome.dkfz-heidelberg.de/">German Cancer Research
+Center</a>. <p>
+
+We have been given help and support from other BioinfoGRID partners
+(especially from Bari, Italy), and from the EGEE community. Special
+thanks also to Alessandro Maraschini. <p>
+
+The funding and support come from the <a
+href="http://www.bioinfogrid.eu/">BioinfoGRID project</a>. <p>
+
+
+<a href="http://sourceforge.net/projects/soaplab/" target="_top"><img src="http://sourceforge.net/sflogo.php?group_id=133465&amp;type=1" border="0" align="bottom"/></a>
+
+
+<hr>
+<div align=right><font size=-2>
+<address><A HREF="mailto:martin.senger@gmail.com">Martin Senger</A><BR></address>
+<!-- hhmts start -->
+Last modified: Wed Oct 31 15:11:15 2007
+<!-- hhmts end -->
+</font></div>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-384539-1";
+urchinTracker();
+</script>
+</body> </html>

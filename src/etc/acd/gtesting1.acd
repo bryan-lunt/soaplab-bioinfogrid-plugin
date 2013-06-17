@@ -1,0 +1,61 @@
+appl: GTest1 [
+  documentation: "Testing interactions with GRID"
+  groups: "grid"
+  nonemboss: "Y"
+  executable: "grid-testing-01.pl"
+]
+
+# --- setting some environment variables
+string: env1  [
+   information: "A string that becomes an environment variable ENVVAR_1"
+   additional: "Y"
+   qualifier: ENVVAR_1
+   default: "Ciao mundi"
+   comment: envar
+#   comment: "defaults"
+]
+string: env2  [
+   information: "A string that becomes an environment variable ENVVAR_2"
+   additional: "Y"
+   qualifier: ENVVAR_2
+   default: "Ahoj, svete"
+   comment: envar
+#   comment: "defaults"
+]
+
+# --- some command-line arguments
+boolean: bool  [
+   information: "A boolean option with no default value"
+   qualifier: "b1"
+]
+
+string: str_notag  [
+   information: "A string without any tag"
+   additional: "Y"
+   parameter: "Y"
+   default: "Hello World"
+#   comment: "defaults"
+]
+
+string: str  [
+   information: "str: A ordinary string with a tag 'arg'"
+   additional: "Y"
+   qualifier: arg
+   default: "Mabuhay"
+]
+
+# --- input/output files
+infile: input  [
+  additional: "Y"
+  qualifier: i
+]
+
+outfile: output  [
+  additional: "Y"
+  qualifier: o
+]
+
+#outfile: output_std  [
+#  additional: "Y"
+#  default: "stdout"
+#]
